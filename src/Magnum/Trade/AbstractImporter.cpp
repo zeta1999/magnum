@@ -38,6 +38,7 @@
 #include "Magnum/Trade/CameraData.h"
 #include "Magnum/Trade/ImageData.h"
 #include "Magnum/Trade/LightData.h"
+#include "Magnum/Trade/MeshData.h"
 #include "Magnum/Trade/MeshData2D.h"
 #include "Magnum/Trade/MeshData3D.h"
 #include "Magnum/Trade/ObjectData2D.h"
@@ -400,6 +401,40 @@ Containers::Pointer<ObjectData3D> AbstractImporter::object3D(const UnsignedInt i
 
 Containers::Pointer<ObjectData3D> AbstractImporter::doObject3D(UnsignedInt) {
     CORRADE_ASSERT(false, "Trade::AbstractImporter::object3D(): not implemented", {});
+}
+
+UnsignedInt AbstractImporter::meshCount() const {
+    CORRADE_ASSERT(isOpened(), "Trade::AbstractImporter::meshCount(): no file opened", {});
+    return doMeshCount();
+}
+
+UnsignedInt AbstractImporter::doMeshCount() const { return 0; }
+
+Int AbstractImporter::meshForName(const std::string& name) {
+    CORRADE_ASSERT(isOpened(), "Trade::AbstractImporter::meshForName(): no file opened", {});
+    return doMeshForName(name);
+}
+
+Int AbstractImporter::doMeshForName(const std::string&) { return -1; }
+
+std::string AbstractImporter::meshName(const UnsignedInt id) {
+    CORRADE_ASSERT(isOpened(), "Trade::AbstractImporter::meshName(): no file opened", {});
+    CORRADE_ASSERT(id < doMeshCount(), "Trade::AbstractImporter::meshName(): index" << id << "out of range for" << doMeshCount() << "entries", {});
+    return doMeshName(id);
+}
+
+std::string AbstractImporter::doMeshName(UnsignedInt) { return {}; }
+
+Containers::Optional<MeshData> AbstractImporter::mesh(const UnsignedInt id) {
+    CORRADE_ASSERT(isOpened(), "Trade::AbstractImporter::mesh(): no file opened", {});
+    CORRADE_ASSERT(id < doMeshCount(), "Trade::AbstractImporter::mesh(): index" << id << "out of range for" << doMeshCount() << "entries", {});
+    Containers::Optional<MeshData> mesh = doMesh(id);
+    CORRADE_ASSERT(!mesh || (!mesh->_indexData.deleter() && !mesh->_vertexData.deleter() && !mesh->_attributes.deleter()), "Trade::AbstractImporter::mesh(): implementation is not allowed to use a custom Array deleter", {});
+    return mesh;
+}
+
+Containers::Optional<MeshData> AbstractImporter::doMesh(UnsignedInt) {
+    CORRADE_ASSERT(false, "Trade::AbstractImporter::mesh(): not implemented", {});
 }
 
 UnsignedInt AbstractImporter::mesh2DCount() const {

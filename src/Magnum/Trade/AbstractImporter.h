@@ -117,8 +117,8 @@ expose internal state through various accessors:
     imported by @ref image1D(), @ref image2D() or @ref image3D()
 -   @ref LightData::importerState() can expose importer state for a light
     imported by @ref light()
--   @ref MeshData3D::importerState() can expose importer state for a mesh
-    imported by @ref mesh2D() or @ref mesh3D()
+-   @ref MeshData::importerState() can expose importer state for a mesh
+    imported by @ref mesh()
 -   @ref ObjectData3D::importerState() can expose importer state for an object
     imported by @ref object2D() or @ref object3D()
 -   @ref SceneData::importerState() can expose importer state for a scene
@@ -651,6 +651,44 @@ class MAGNUM_TRADE_EXPORT AbstractImporter: public PluginManager::AbstractManagi
         Containers::Pointer<ObjectData3D> object3D(UnsignedInt id);
 
         /**
+         * @brief Mesh count
+         * @m_since_latest
+         *
+         * Expects that a file is opened.
+         */
+        UnsignedInt meshCount() const;
+
+        /**
+         * @brief Mesh ID for given name
+         * @m_since_latest
+         *
+         * If no mesh for given name exists, returns @cpp -1 @ce. Expects that
+         * a file is opened.
+         * @see @ref meshName()
+         */
+        Int meshForName(const std::string& name);
+
+        /**
+         * @brief Mesh name
+         * @param id        Mesh ID, from range [0, @ref meshCount()).
+         * @m_since_latest
+         *
+         * Expects that a file is opened.
+         * @see @ref meshForName()
+         */
+        std::string meshName(UnsignedInt id);
+
+        /**
+         * @brief Mesh
+         * @param id        Mesh ID, from range [0, @ref meshCount()).
+         * @m_since_latest
+         *
+         * Returns given mesh or @ref Containers::NullOpt if importing failed.
+         * Expects that a file is opened.
+         */
+        Containers::Optional<MeshData> mesh(UnsignedInt id);
+
+        /**
          * @brief Two-dimensional mesh count
          *
          * Expects that a file is opened.
@@ -1096,6 +1134,36 @@ class MAGNUM_TRADE_EXPORT AbstractImporter: public PluginManager::AbstractManagi
 
         /** @brief Implementation for @ref object3D() */
         virtual Containers::Pointer<ObjectData3D> doObject3D(UnsignedInt id);
+
+        /**
+         * @brief Implementation for @ref meshCount()
+         * @m_since_latest
+         *
+         * Default implementation returns @cpp 0 @ce.
+         */
+        virtual UnsignedInt doMeshCount() const;
+
+        /**
+         * @brief Implementation for @ref meshForName()
+         * @m_since_latest
+         *
+         * Default implementation returns @cpp -1 @ce.
+         */
+        virtual Int doMeshForName(const std::string& name);
+
+        /**
+         * @brief Implementation for @ref meshName()
+         * @m_since_latest
+         *
+         * Default implementation returns empty string.
+         */
+        virtual std::string doMeshName(UnsignedInt id);
+
+        /**
+         * @brief Implementation for @ref mesh()
+         * @m_since_latest
+         */
+        virtual Containers::Optional<MeshData> doMesh(UnsignedInt id);
 
         /**
          * @brief Implementation for @ref mesh2DCount()
