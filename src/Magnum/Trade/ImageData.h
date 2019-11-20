@@ -421,6 +421,7 @@ template<UnsignedInt dimensions> class ImageData {
 
         /**
          * @brief Conversion to a mutable view
+         * @m_since{2019,10}
          *
          * The image is expected to be uncompressed and mutable.
          * @see @ref isCompressed(), @ref dataFlags()
@@ -439,6 +440,7 @@ template<UnsignedInt dimensions> class ImageData {
 
         /**
          * @brief Conversion to a mutable compressed view
+         * @m_since{2019,10}
          *
          * The image is expected to be compressed and mutable.
          * @see @ref isCompressed(), @ref dataFlags()
