@@ -84,6 +84,34 @@ typedef Containers::EnumSet<CompileFlag> CompileFlags;
 CORRADE_ENUMSET_OPERATORS(CompileFlags)
 
 /**
+@brief Compile mesh data
+
+Configures a mesh for a @ref Shaders::Generic shader shader with vertex buffer
+and possibly also an index buffer, if the mesh is indexed.
+
+-   Positions are bound to the @ref Shaders::Generic2D::Position attribute if
+    they are 2D or to @ref Shaders::Generic3D::Position if they are 3D.
+-   If the mesh contains normals or if @ref CompileFlag::GenerateFlatNormals /
+    @ref CompileFlag::GenerateSmoothNormals is set, these are bound to
+    @ref Shaders::Generic3D::Normal.
+-   If the mesh contains texture coordinates, these are bound to
+    @ref Shaders::Generic::TextureCoordinates.
+-   If the mesh contains colors, these are bound to
+    @ref Shaders::Generic::Color3 / @ref Shaders::Generic::Color4 based on
+    their type.
+
+If normal generation is not requested, @ref Trade::MeshData::indexData() and
+@ref Trade::MeshData::vertexData() are uploaded as-is without any further
+modifications, keeping the original layout and data format. If
+@ref CompileFlag::GenerateSmoothNormals is requested, vertex data are expanded
+to their base type and interleaved together with the generated normals; if
+@ref CompileFlag::GenerateFlatNormals is requested, the mesh is first
+deindexed, vertex data expanded to their base type and then interleaved
+together with the generated normals.
+*/
+MAGNUM_MESHTOOLS_EXPORT GL::Mesh compile(const Trade::MeshData& meshData, CompileFlags flags = {});
+
+/**
 @brief Compile 2D mesh data
 
 Configures a mesh for @ref Shaders::Generic2D shader with vertex buffer and

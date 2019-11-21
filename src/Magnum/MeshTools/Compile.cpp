@@ -25,8 +25,9 @@
 
 #include "Compile.h"
 
+#include <Corrade/Containers/Optional.h>
 #include <Corrade/Containers/StridedArrayView.h>
-#include <Corrade/Containers/ArrayViewStl.h> /** @todo remove once MeshData is sane */
+#include <Corrade/Containers/ArrayViewStl.h> /** @todo remove once MeshDataXD is gone */
 
 #include "Magnum/GL/Buffer.h"
 #include "Magnum/GL/Mesh.h"
@@ -36,6 +37,7 @@
 #include "Magnum/MeshTools/GenerateNormals.h"
 #include "Magnum/MeshTools/Duplicate.h"
 #include "Magnum/MeshTools/Interleave.h"
+#include "Magnum/Trade/MeshData.h"
 #include "Magnum/Trade/MeshData2D.h"
 #include "Magnum/Trade/MeshData3D.h"
 
@@ -44,6 +46,74 @@
 #include "Magnum/Shaders/Generic.h"
 
 namespace Magnum { namespace MeshTools {
+
+GL::Mesh compile(const Trade::MeshData& meshData, const CompileFlags flags) {
+    CORRADE_ASSERT(!(flags & (CompileFlag::GenerateSmoothNormals|CompileFlag::GenerateSmoothNormals)),
+        "MeshTools::compile(): sorry, you're here too early, normal generation not implemented for the new MeshData yet", GL::Mesh{});
+
+    /* Basics */
+    GL::Mesh mesh;
+    mesh.setPrimitive(meshData.primitive());
+
+    /* Vertex data */
+    GL::Buffer vertices;
+    vertices.setData(meshData.vertexData());
+    for(UnsignedInt i = 0; i != meshData.attributeCount(); ++i) {
+        Containers::Optional<GL::DynamicAttribute> attribute;
+        switch(meshData.attributeName(i)) {
+            case Trade::MeshAttributeName::Position:
+                if(meshData.attributeType(i) == MeshAttributeType::Vector2)
+                    attribute.emplace(Shaders::Generic2D::Position{});
+                else if(meshData.attributeType(i) == MeshAttributeType::Vector3)
+                    attribute.emplace(Shaders::Generic3D::Position{});
+                else CORRADE_ASSERT_UNREACHABLE();
+                break;
+            case Trade::MeshAttributeName::Normal:
+                CORRADE_INTERNAL_ASSERT(meshData.attributeType(i) == MeshAttributeType::Vector3);
+                attribute.emplace(Shaders::Generic3D::Normal{});
+                break;
+            case Trade::MeshAttributeName::TextureCoordinates:
+                CORRADE_INTERNAL_ASSERT(meshData.attributeType(i) == MeshAttributeType::Vector2);
+                /** @todo have Generic2D derived from Generic that has all
+                    attribute definitions common for 2D and 3D */
+                attribute.emplace(Shaders::Generic2D::TextureCoordinates{});
+                break;
+            case Trade::MeshAttributeName::Color:
+                /** @todo have Generic2D derived from Generic that has all
+                    attribute definitions common for 2D and 3D */
+                if(meshData.attributeType(i) == MeshAttributeType::Vector3)
+                    attribute.emplace(Shaders::Generic2D::Color3{});
+                else if(meshData.attributeType(i) == MeshAttributeType::Vector3)
+                    attribute.emplace(Shaders::Generic2D::Color4{});
+                else CORRADE_ASSERT_UNREACHABLE();
+                break;
+
+            /* So it doesn't yell that we didn't handle a known attribute */
+            case Trade::MeshAttributeName::Custom:
+                break;
+        }
+
+        if(!attribute) {
+            Warning{} << "MeshTools::compile(): ignoring unknown attribute" << meshData.attributeName(i);
+            continue;
+        }
+
+        /** @todo FFS! the dynamic variant needs an enable_if, i don't want to
+            cast like this */
+        mesh.addVertexBuffer(vertices,
+            GLintptr(meshData.attributeOffset(i)),
+            GLsizei(meshData.attributeStride(i)), *attribute);
+    }
+
+    if(meshData.isIndexed()) {
+        GL::Buffer indices;
+        indices.setData(meshData.indexData());
+        mesh.setIndexBuffer(std::move(indices), 0, meshData.indexType())
+            .setCount(meshData.indexCount());
+    }
+
+    return mesh;
+}
 
 GL::Mesh compile(const Trade::MeshData2D& meshData) {
     GL::Mesh mesh;
