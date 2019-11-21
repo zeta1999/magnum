@@ -199,6 +199,8 @@ See also:
     with @cpp const @ce types and the non-const
     @ref Trade::AnimationData::data() was renamed to
     @ref Trade::AnimationData::mutableData() "mutableData()".
+-   @ref Trade::AnimationTrackData constructors are now explicit as that
+    enforces better readability in long initializer expressions
 -   Non-const @ref Trade::ImageData::data() and @ref Trade::ImageData::pixels()
     were renamed to @ref Trade::ImageData::mutableData() and
     @ref Trade::ImageData::mutablePixels() to follow the new
