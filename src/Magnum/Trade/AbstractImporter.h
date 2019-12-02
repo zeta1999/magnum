@@ -52,6 +52,81 @@ typedef CORRADE_DEPRECATED("use InputFileCallbackPolicy instead") InputFileCallb
 #endif
 
 /**
+@brief Import flag
+
+@see @ref ImportFlags, @ref AbstractImporter::setFlags()
+*/
+enum class ImportFlag: UnsignedByte {
+    /**
+     * Force zero-copy import of animation data opened through
+     * @ref openMemory(). See @ref ImportFlag::ForceZeroCopy for more
+     * information.
+     */
+    ForceZeroCopyAnimations = 1 << 0,
+
+    /**
+     * Force zero-copy import of image data opened through
+     * @ref openMemory(). See @ref ImportFlag::ForceZeroCopy for more
+     * information.
+     */
+    ForceZeroCopyImages = 1 << 1,
+
+    /**
+     * Force zero-copy import of mesh index data opened through
+     * @ref openMemory(). See @ref ImportFlag::ForceZeroCopy for more
+     * information.
+     */
+    ForceZeroCopyMeshIndices = 1 << 2,
+
+    /**
+     * Force zero-copy import of mesh vertex data opened through
+     * @ref openMemory(). See @ref ImportFlag::ForceZeroCopy for more
+     * information.
+     */
+    ForceZeroCopyMeshVertices = 1 << 3,
+
+    /**
+     * Force zero-copy import of animation, image and mesh data opened through
+     * @ref openMemory(). A combination of
+     * @ref ImportFlag::ForceZeroCopyAnimations,
+     * @ref ImportFlag::ForceZeroCopyImages,
+     * @ref ImportFlag::ForceZeroCopyMeshIndices,
+     * @ref ImportFlag::ForceZeroCopyMeshVertices, particular importers might
+     * only support a subset of these.
+     *
+     * By default, if the data has to be processed in some
+     * way, preventing zero-copy import, the importer will produce a modified
+     * copy of the data. Setting this flag will cause either already the
+     * @ref openMemory() or particular @ref animation(), @ref image() or
+     * @ref mesh() to fail. This flag can be set only if the importer supports
+     * the @ref ImporterFeature::OpenMemory and it might depend on various
+     * importer-specific configuration. See the docs of a particular importer
+     * for more information.
+     * @see @ref Trade-AbstractImporter-usage-zerocopy,
+     *      @ref AnimationData::dataFlags(), @ref ImageData::dataFlags(),
+     *      @ref MeshData::indexDataFlags(), @ref MeshData::vertexDataFlags()
+     */
+    ForceZeroCopy = ForceZeroCopyAnimations|ForceZeroCopyImages|ForceZeroCopyMeshIndices|ForceZeroCopyMeshVertices
+
+    /** @todo Y flip for images, "I want to import just once, don't copy" ... */
+};
+
+/**
+@brief Import flags
+
+@see @ref AbstractImporter::setFlags()
+*/
+typedef Containers::EnumSet<ImportFlag> ImportFlags;
+
+CORRADE_ENUMSET_OPERATORS(ImportFlags)
+
+/** @debugoperatorenum{ImportFlag} */
+MAGNUM_TRADE_EXPORT Debug& operator<<(Debug& debug, ImportFlag value);
+
+/** @debugoperatorenum{ImportFlags} */
+MAGNUM_TRADE_EXPORT Debug& operator<<(Debug& debug, ImportFlags value);
+
+/**
 @brief Base for importer plugins
 
 Provides interface for importing 2D/3D scene, camera, light, animation, mesh,
@@ -99,6 +174,28 @@ to be set.
 
 The input file callback signature is the same for @ref Trade::AbstractImporter
 and @ref Text::AbstractFont to allow code reuse.
+
+@subsection Trade-AbstractImporter-usage-zerocopy Zero-copy data import
+
+Some file formats have the data structured in a way that allows them to be
+loaded directly into memory or onto the GPU and used as-is. For these,
+importers can take an advantage of zero-copy data import --- if you memory-map
+such a a file, the importer will give you a view on a sub-range of the
+memory-mapped file instead of a copy. Importers advertise such behavior with
+@ref Feature::OpenMemory and you can use @ref openMemory() to open the file in
+a way that allows data to be imported zero-copy:
+
+@snippet MagnumTrade.cpp AbstractImporter-usage-zerocopy
+
+In some cases the importer might still need to process the data on import ---
+for example converting image endianness or flipping image origin, and in that
+case it'll still return a copy of the data, indicated by @ref DataFlag::Owned
+in the imported @ref AnimationData / @ref ImageData / @ref MeshData. To ensure
+this fallback is never done and the import fails instead (which is useful when
+you want to avoid accidental slowdowns in your high-performance assert import
+routine), you can enable one of the @ref ImportFlag::ForceZeroCopy flags in
+@ref setFlags(). Note that particular plugins might have various
+importer-specific configuration affecting this as well.
 
 @subsection Trade-AbstractImporter-usage-state Internal importer state
 
@@ -189,9 +286,9 @@ import.
 You don't need to do most of the redundant sanity checks, these things are
 checked by the implementation:
 
--   The @ref doOpenData(), @ref doOpenFile() and @ref doOpenState() functions
-    are called after the previous file was closed, function @ref doClose() is
-    called only if there is any file opened.
+-   The @ref doOpenData(), @ref doOpenMemory(), @ref doOpenFile() and
+    @ref doOpenState() functions are called after the previous file was closed,
+    function @ref doClose() is called only if there is any file opened.
 -   The @ref doOpenData() function is called only if @ref Feature::OpenData is
     supported.
 -   The @ref doOpenState() function is called only if @ref Feature::OpenState
@@ -234,8 +331,14 @@ class MAGNUM_TRADE_EXPORT AbstractImporter: public PluginManager::AbstractManagi
             /** Opening files from raw data using @ref openData() */
             OpenData = 1 << 0,
 
+            /**
+             * Opening raw memory and memory-mapped files using
+             * @ref openMemory(), potentially with zero-copy loading
+             */
+            OpenMemory = 1 << 1,
+
             /** Opening already loaded state using @ref openState() */
-            OpenState = 1 << 1,
+            OpenState = 1 << 2,
 
             /**
              * Specifying callbacks for loading additional files referenced
@@ -246,7 +349,7 @@ class MAGNUM_TRADE_EXPORT AbstractImporter: public PluginManager::AbstractManagi
              * See @ref Trade-AbstractImporter-usage-callbacks and particular
              * importer documentation for more information.
              */
-            FileCallback = 1 << 2
+            FileCallback = 1 << 3
         };
 
         /**
@@ -295,6 +398,19 @@ class MAGNUM_TRADE_EXPORT AbstractImporter: public PluginManager::AbstractManagi
 
         /** @brief Features supported by this importer */
         Features features() const { return doFeatures(); }
+
+        /** @brief Import flags */
+        ImportFlags flags() const { return _flags; }
+
+        /**
+         * @brief Set import flags
+         *
+         * Expects that no file is opened --- these flags can't be modified
+         * while a file is imported. Some flags can be set only if the importer
+         * supports particular features, see documentation of each
+         * @ref ImportFlag for more information.
+         */
+        void setFlags(ImportFlags flags);
 
         /**
          * @brief File opening callback function
@@ -386,13 +502,37 @@ class MAGNUM_TRADE_EXPORT AbstractImporter: public PluginManager::AbstractManagi
         /**
          * @brief Open raw data
          *
-         * Closes previous file, if it was opened, and tries to open given raw
-         * data. Available only if @ref Feature::OpenData is supported. Returns
-         * @cpp true @ce on success, @cpp false @ce otherwise. The @p data is
-         * not expected to be alive after the function exits.
+         * Closes previous file, if it was opened, and tries to open @p data.
+         * Expects that @ref Feature::OpenData is supported. When using this
+         * function, the importer can't make any assumptions about the lifetime
+         * of the @p data array and it *may* make a local copy of it. See
+         * @ref openMemory() for an alternative.
+         *
+         * Returns @cpp true @ce on success, @cpp false @ce otherwise.
          * @see @ref features(), @ref openFile()
          */
         bool openData(Containers::ArrayView<const char> data);
+
+        /**
+         * @brief Open raw memory
+         *
+         * Closes previous file, if it was opened, and tries to open @p memory.
+         * Unlike @ref openData() this can avoid a local copy of @p data,
+         * expecting that it will stay in scope for the whole lifetime of the
+         * plugin. Expects that @ref Feature::OpenMemory is supported. If
+         * @ref Feature::OpenMemory is not supported but @ref Feature::OpenData
+         * is supported instead, @p memory is passed through to
+         * @ref openData().
+         *
+         * Returns @cpp true @ce on success, @cpp false @ce otherwise.
+         * @see @ref features(), @ref openFile()
+         */
+        bool openMemory(Containers::ArrayView<const char> memory);
+
+        // TODO: this should call into openMemory() but then advertise the data
+        //  are mutable somehow (via ImportFlags? via some file callback flags?
+        // as i need it there too)
+        bool openMemory(Containers::ArrayView<char> memory);
 
         /**
          * @brief Open already loaded state
@@ -401,8 +541,8 @@ class MAGNUM_TRADE_EXPORT AbstractImporter: public PluginManager::AbstractManagi
          *      textures and materials.
          *
          * Closes previous file, if it was opened, and tries to open given
-         * state. Available only if @ref Feature::OpenState is supported. Returns
-         * @cpp true @ce on success, @cpp false @ce otherwise.
+         * state. Available only if @ref Feature::OpenState is supported.
+         * Returns @cpp true @ce on success, @cpp false @ce otherwise.
          *
          * See documentation of a particular plugin for more information about
          * type and contents of the @p state parameter.
@@ -998,6 +1138,9 @@ class MAGNUM_TRADE_EXPORT AbstractImporter: public PluginManager::AbstractManagi
         /** @brief Implementation for @ref openData() */
         virtual void doOpenData(Containers::ArrayView<const char> data);
 
+        /** @brief Implementation for @ref openMemory() */
+        virtual void doOpenMemory(Containers::ArrayView<const char> data);
+
         /** @brief Implementation for @ref openState() */
         virtual void doOpenState(const void* state, const std::string& filePath);
 
@@ -1392,6 +1535,8 @@ class MAGNUM_TRADE_EXPORT AbstractImporter: public PluginManager::AbstractManagi
 
         /** @brief Implementation for @ref importerState() */
         virtual const void* doImporterState() const;
+
+        ImportFlags _flags;
 
         Containers::Optional<Containers::ArrayView<const char>>(*_fileCallback)(const std::string&, InputFileCallbackPolicy, void*){};
         void* _fileCallbackUserData{};

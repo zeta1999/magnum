@@ -52,6 +52,32 @@
 
 namespace Magnum { namespace Trade {
 
+Debug& operator<<(Debug& debug, const ImportFlag value) {
+    debug << "Trade::ImportFlag" << Debug::nospace;
+
+    switch(value) {
+        /* LCOV_EXCL_START */
+        #define _c(v) case ImportFlag::v: return debug << "::" #v;
+        _c(ForceZeroCopyAnimations)
+        _c(ForceZeroCopyImages)
+        _c(ForceZeroCopyMeshIndices)
+        _c(ForceZeroCopyMeshVertices)
+        _c(ForceZeroCopy)
+        #undef _c
+        /* LCOV_EXCL_STOP */
+    }
+
+    return debug << "(" << Debug::nospace << reinterpret_cast<void*>(UnsignedByte(value)) << Debug::nospace << ")";
+}
+
+Debug& operator<<(Debug& debug, const ImportFlags value) {
+    return Containers::enumSetDebugOutput(debug, value, "Trade::ImportFlags{}", {
+        ImportFlag::ForceZeroCopyAnimations,
+        ImportFlag::ForceZeroCopyImages,
+        ImportFlag::ForceZeroCopyMeshIndices,
+        ImportFlag::ForceZeroCopyMeshVertices});
+}
+
 std::string AbstractImporter::pluginInterface() {
     return "cz.mosra.magnum.Trade.AbstractImporter/0.3";
 }
@@ -94,6 +120,12 @@ AbstractImporter::AbstractImporter(PluginManager::Manager<AbstractImporter>& man
 
 AbstractImporter::AbstractImporter(PluginManager::AbstractManager& manager, const std::string& plugin): PluginManager::AbstractManagingPlugin<AbstractImporter>{manager, plugin} {}
 
+void AbstractImporter::setFlags(ImportFlags flags) {
+    CORRADE_ASSERT(!(flags & ImportFlag::ForceZeroCopy) || doFeatures() & Feature::OpenMemory,
+        "Trade::AbstractImporter::setFlags():" << Feature::OpenMemory << "not supported by the importer to satisfy" << flags, );
+    _flags = flags;
+}
+
 void AbstractImporter::setFileCallback(Containers::Optional<Containers::ArrayView<const char>>(*callback)(const std::string&, InputFileCallbackPolicy, void*), void* const userData) {
     CORRADE_ASSERT(!isOpened(), "Trade::AbstractImporter::setFileCallback(): can't be set while a file is opened", );
     CORRADE_ASSERT(features() & (Feature::FileCallback|Feature::OpenData), "Trade::AbstractImporter::setFileCallback(): importer supports neither loading from data nor via callbacks, callbacks can't be used", );
@@ -119,6 +151,25 @@ bool AbstractImporter::openData(Containers::ArrayView<const char> data) {
 
 void AbstractImporter::doOpenData(Containers::ArrayView<const char>) {
     CORRADE_ASSERT(false, "Trade::AbstractImporter::openData(): feature advertised but not implemented", );
+}
+
+bool AbstractImporter::openMemory(Containers::ArrayView<const char> data) {
+    if(!(features() & Feature::OpenMemory)) {
+        CORRADE_ASSERT(features() & Feature::OpenData,
+            "Trade::AbstractImporter::openMemory(): neither memory nor data opening is supported", {});
+        return openData(data);
+    }
+
+    /* We accept empty data here (instead of checking for them and failing so
+       the check doesn't be done on the plugin side) because for some file
+       formats it could be valid (e.g. OBJ or JSON-based formats). */
+    close();
+    doOpenMemory(data);
+    return isOpened();
+}
+
+void AbstractImporter::doOpenMemory(Containers::ArrayView<const char>) {
+    CORRADE_ASSERT(false, "Trade::AbstractImporter::openMemory(): feature advertised but not implemented", );
 }
 
 bool AbstractImporter::openState(const void* state, const std::string& filePath) {
