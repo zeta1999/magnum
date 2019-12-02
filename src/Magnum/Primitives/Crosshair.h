@@ -43,7 +43,7 @@ namespace Magnum { namespace Primitives {
 
 @see @ref crosshair3D(), @ref axis2D(), @ref line2D()
 */
-MAGNUM_PRIMITIVES_EXPORT Trade::MeshData2D crosshair2D();
+MAGNUM_PRIMITIVES_EXPORT Trade::MeshData crosshair2D();
 
 /**
 @brief 3D crosshair
@@ -54,7 +54,7 @@ MAGNUM_PRIMITIVES_EXPORT Trade::MeshData2D crosshair2D();
 
 @see @ref crosshair2D(), @ref axis2D(), @ref line3D()
 */
-MAGNUM_PRIMITIVES_EXPORT Trade::MeshData3D crosshair3D();
+MAGNUM_PRIMITIVES_EXPORT Trade::MeshData crosshair3D();
 
 }}
 

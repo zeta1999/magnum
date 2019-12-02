@@ -44,7 +44,7 @@ Two color-coded arrows for visualizing orientation (XY is RG). Indexed
 
 @see @ref axis3D(), @ref crosshair2D(), @ref line2D()
 */
-MAGNUM_PRIMITIVES_EXPORT Trade::MeshData2D axis2D();
+MAGNUM_PRIMITIVES_EXPORT Trade::MeshData axis2D();
 
 /**
 @brief 3D axis
@@ -56,7 +56,7 @@ Three color-coded arrows for visualizing orientation (XYZ is RGB). Indexed
 
 @see @ref axis2D(), @ref crosshair3D(), @ref line3D()
 */
-MAGNUM_PRIMITIVES_EXPORT Trade::MeshData3D axis3D();
+MAGNUM_PRIMITIVES_EXPORT Trade::MeshData axis3D();
 
 }}
 
