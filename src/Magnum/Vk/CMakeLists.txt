@@ -32,6 +32,7 @@ set(Vulkan_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/MagnumExternal/Vulkan)
 find_package(Vulkan REQUIRED)
 
 set(MagnumVk_SRCS
+    Extensions.cpp
     Result.cpp
     Version.cpp)
 
@@ -39,9 +40,13 @@ set(MagnumVk_GracefulAssert_SRCS
     Enums.cpp)
 
 set(MagnumVk_HEADERS
+    Device.h
     Enums.h
+    Extensions.h
+    Instance.h
     Integration.h
     Result.h
+    TypeTraits.h
     Version.h
     Vk.h
     Vulkan.h
