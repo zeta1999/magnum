@@ -170,6 +170,9 @@ InstanceVkTest::InstanceVkTest() {
 using namespace Containers::Literals;
 
 void InstanceVkTest::createInfoConstructDefault() {
+    if(std::getenv("MAGNUM_VULKAN_VERSION"))
+        CORRADE_SKIP("Can't test with the MAGNUM_VULKAN_VERSION environment variable set");
+
     InstanceCreateInfo info;
     CORRADE_VERIFY(info->sType);
     CORRADE_VERIFY(!info->pNext);
@@ -185,6 +188,9 @@ void InstanceVkTest::createInfoConstructDefault() {
 }
 
 void InstanceVkTest::createInfoConstructNoImplicitExtensions() {
+    if(std::getenv("MAGNUM_VULKAN_VERSION"))
+        CORRADE_SKIP("Can't test with the MAGNUM_VULKAN_VERSION environment variable set");
+
     InstanceCreateInfo info{InstanceCreateInfo::Flag::NoImplicitExtensions};
     CORRADE_VERIFY(info->sType);
     CORRADE_VERIFY(!info->pNext);
@@ -247,6 +253,9 @@ void InstanceVkTest::createInfoLayers() {
 }
 
 void InstanceVkTest::createInfoExtensions() {
+    if(std::getenv("MAGNUM_DISABLE_EXTENSIONS"))
+        CORRADE_SKIP("Can't test with the MAGNUM_DISABLE_EXTENSIONS environment variable set");
+
     InstanceCreateInfo info{InstanceCreateInfo::Flag::NoImplicitExtensions};
     CORRADE_VERIFY(!info->ppEnabledExtensionNames);
     CORRADE_COMPARE(info->enabledExtensionCount, 0);
@@ -293,6 +302,9 @@ void InstanceVkTest::createInfoCopiedStrings() {
 }
 
 void InstanceVkTest::construct() {
+    if(std::getenv("MAGNUM_VULKAN_VERSION"))
+        CORRADE_SKIP("Can't test with the MAGNUM_VULKAN_VERSION environment variable set");
+
     {
         Instance instance;
         CORRADE_VERIFY(instance.handle());
@@ -314,6 +326,9 @@ void InstanceVkTest::construct() {
 }
 
 void InstanceVkTest::constructLayerExtension() {
+    if(std::getenv("MAGNUM_DISABLE_EXTENSIONS"))
+        CORRADE_SKIP("Can't test with the MAGNUM_DISABLE_EXTENSIONS environment variable set");
+
     if(!enumerateLayerProperties().isSupported("VK_LAYER_KHRONOS_validation"))
         CORRADE_SKIP("VK_LAYER_KHRONOS_validation not supported, can't test");
     if(!enumerateInstanceExtensionProperties({"VK_LAYER_KHRONOS_validation"}).isSupported<Extensions::EXT::debug_report>())
@@ -339,6 +354,11 @@ void InstanceVkTest::constructLayerExtension() {
 void InstanceVkTest::constructCommandLineDisable() {
     auto&& data = ConstructCommandLineData[testCaseInstanceId()];
     setTestCaseDescription(data.nameDisable);
+
+    if(std::getenv("MAGNUM_VULKAN_VERSION"))
+        CORRADE_SKIP("Can't test with the MAGNUM_VULKAN_VERSION environment variable set");
+    if(std::getenv("MAGNUM_DISABLE_EXTENSIONS"))
+        CORRADE_SKIP("Can't test with the MAGNUM_DISABLE_EXTENSIONS environment variable set");
 
     if(!enumerateLayerProperties().isSupported("VK_LAYER_KHRONOS_validation"))
         CORRADE_SKIP("VK_LAYER_KHRONOS_validation not supported, can't test");
@@ -374,6 +394,11 @@ void InstanceVkTest::constructCommandLineDisable() {
 void InstanceVkTest::constructCommandLineEnable() {
     auto&& data = ConstructCommandLineData[testCaseInstanceId()];
     setTestCaseDescription(data.nameEnable);
+
+    if(std::getenv("MAGNUM_VULKAN_VERSION"))
+        CORRADE_SKIP("Can't test with the MAGNUM_VULKAN_VERSION environment variable set");
+    if(std::getenv("MAGNUM_DISABLE_EXTENSIONS"))
+        CORRADE_SKIP("Can't test with the MAGNUM_DISABLE_EXTENSIONS environment variable set");
 
     if(!enumerateLayerProperties().isSupported("VK_LAYER_KHRONOS_validation"))
         CORRADE_SKIP("VK_LAYER_KHRONOS_validation not supported, can't test");
@@ -451,6 +476,11 @@ void InstanceVkTest::constructUnknownExtension() {
 }
 
 void InstanceVkTest::wrap() {
+    if(std::getenv("MAGNUM_VULKAN_VERSION"))
+        CORRADE_SKIP("Can't test with the MAGNUM_VULKAN_VERSION environment variable set");
+    if(std::getenv("MAGNUM_DISABLE_EXTENSIONS"))
+        CORRADE_SKIP("Can't test with the MAGNUM_DISABLE_EXTENSIONS environment variable set");
+
     InstanceExtensionProperties properties = enumerateInstanceExtensionProperties();
     if(!properties.isSupported<Extensions::EXT::debug_report>())
         CORRADE_SKIP("VK_EXT_debug_report not supported, can't test");
