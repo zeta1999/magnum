@@ -53,7 +53,10 @@ struct DevicePropertiesVkTest: TestSuite::Tester {
     void enumerateExtensions();
     void enumerateExtensionsWithKhronosValidationLayer();
     void enumerateExtensionsNonexistentLayer();
+
+    void extensionConstructMove();
     void extensionIsSupported();
+    void extensionNamedRevision();
 
     Instance _instance;
 };
@@ -66,7 +69,10 @@ DevicePropertiesVkTest::DevicePropertiesVkTest(): _instance{InstanceCreateInfo{a
               &DevicePropertiesVkTest::enumerateExtensions,
               &DevicePropertiesVkTest::enumerateExtensionsWithKhronosValidationLayer,
               &DevicePropertiesVkTest::enumerateExtensionsNonexistentLayer,
-              &DevicePropertiesVkTest::extensionIsSupported});
+
+              &DevicePropertiesVkTest::extensionConstructMove,
+              &DevicePropertiesVkTest::extensionIsSupported,
+              &DevicePropertiesVkTest::extensionNamedRevision});
 }
 
 void DevicePropertiesVkTest::enumerate() {
@@ -166,6 +172,25 @@ void DevicePropertiesVkTest::enumerateExtensionsNonexistentLayer() {
     CORRADE_COMPARE(out.str(), "TODO");
 }
 
+void DevicePropertiesVkTest::extensionConstructMove() {
+    Containers::Array<DeviceProperties> devices = enumerateDevices(_instance);
+    CORRADE_VERIFY(!devices.empty());
+
+    ExtensionProperties a = devices[0].enumerateExtensionProperties();
+    const UnsignedInt count = a.count();
+    if(!count) CORRADE_SKIP("No extensions reported, can't test");
+
+    ExtensionProperties b = std::move(a);
+    CORRADE_COMPARE(b.count(), count);
+
+    ExtensionProperties c{NoCreate};
+    c = std::move(b);
+    CORRADE_COMPARE(c.count(), count);
+
+    CORRADE_VERIFY(std::is_nothrow_move_constructible<ExtensionProperties>::value);
+    CORRADE_VERIFY(std::is_nothrow_move_assignable<ExtensionProperties>::value);
+}
+
 void DevicePropertiesVkTest::extensionIsSupported() {
     Containers::Array<DeviceProperties> devices = enumerateDevices(_instance);
     CORRADE_VERIFY(!devices.empty());
@@ -179,6 +204,24 @@ void DevicePropertiesVkTest::extensionIsSupported() {
     /* Verify the overloads that take our extension wrappers work as well */
     CORRADE_VERIFY(properties.isSupported<Extensions::KHR::maintenance1>());
     CORRADE_VERIFY(properties.isSupported(Extensions::KHR::maintenance1{}));
+}
+
+void DevicePropertiesVkTest::extensionNamedRevision() {
+    Containers::Array<DeviceProperties> devices = enumerateDevices(_instance);
+    CORRADE_VERIFY(!devices.empty());
+
+    ExtensionProperties properties = devices[0].enumerateExtensionProperties();
+
+    /* This extension should be available almost always */
+    if(!properties.isSupported("VK_KHR_maintenance1"))
+        CORRADE_SKIP("VK_KHR_maintenance1 not supported, can't fully test");
+
+    /* This isn't tested in ExtensionPropertiesVkTest because there's an
+       overload which takes only InstanceExtensions */
+    CORRADE_COMPARE_AS(properties.revision<Extensions::KHR::maintenance1>(), 0,
+        TestSuite::Compare::GreaterOrEqual);
+    CORRADE_COMPARE_AS(properties.revision(Extensions::KHR::maintenance1{}), 0,
+        TestSuite::Compare::GreaterOrEqual);
 }
 
 }}}}

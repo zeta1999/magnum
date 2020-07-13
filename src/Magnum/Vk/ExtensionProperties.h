@@ -45,6 +45,8 @@ namespace Magnum { namespace Vk {
 @brief Extension properties
 @m_since_latest
 
+Provides a searchable container of Vulkan device extensions enumerated with
+@ref DeviceProperties::enumerateExtensionProperties().
 @see @ref InstanceExtensionProperties, @type_vk_keyword{ExtensionProperties}
 */
 class MAGNUM_VK_EXPORT ExtensionProperties {
@@ -52,7 +54,9 @@ class MAGNUM_VK_EXPORT ExtensionProperties {
         /**
          * @brief Construct without populating the contents
          *
-         * Equivalent to a moved-from state.
+         * Equivalent to a moved-from state. Move over the result of
+         * @ref DeviceProperties::enumerateExtensionProperties() to make it
+         * usable.
          */
         explicit ExtensionProperties(NoCreateT);
 
