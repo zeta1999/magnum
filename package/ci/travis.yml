@@ -86,6 +86,7 @@ matrix:
         - lcov
         - libsdl2-dev
         - libglfw3-dev
+        - libvulkan-dev
   - language: cpp
     os: linux
     dist: xenial
@@ -145,6 +146,15 @@ matrix:
     - TARGET=desktop
     - CMAKE_CXX_FLAGS="--coverage"
     - BUILD_STATIC=ON
+    - CONFIGURATION=Debug
+  - language: cpp
+    os: osx
+    dist: xenial
+    compiler: gcc
+    env:
+    - JOBID=macos-vulkan
+    - TARGET=desktop-vulkan
+    - CMAKE_CXX_FLAGS="--coverage"
     - CONFIGURATION=Debug
   - language: cpp
     os: osx
@@ -266,18 +276,22 @@ install:
 # GLFW (cached)
 - if [ "$TRAVIS_OS_NAME" == "osx" ] && ( [ "$TARGET" == "desktop" ] || [ "$TARGET" == "desktop-vulkan" ] ); then HOMEBREW_NO_AUTO_UPDATE=1 brew install glfw; fi
 
+# MoltenVK on macOS (cached)
+- if [ "$TRAVIS_OS_NAME" == "osx" ] && [ "$TARGET" == "desktop-vulkan" ]; then HOMEBREW_NO_AUTO_UPDATE=1 brew install molten-vk; fi
+
 # SwiftShader on Linux GLES and Vulkan (cached). Zip from
 # https://github.com/mosra/magnum-ci/tree/swiftshader and self-hosted because
 # GH Actions would make it too simple for people if you could just download the
 # artifacts directly, right? RIGHT?
 - if [ "$TRAVIS_OS_NAME" == "linux" ] && ( [ "$TARGET" == "desktop-gles" ] || [ "$TARGET" == "desktop-vulkan" ] ) && [ ! -e "$HOME/swiftshader/lib/libvk_swiftshader.so" ]; then cd $HOME ; wget https://ci.magnum.graphics/swiftshader-r5464.a6940c8e6e-ubuntu-16.04.zip && mkdir -p swiftshader && cd swiftshader && unzip ../swiftshader-r5464.a6940c8e6e-ubuntu-16.04.zip && cd $TRAVIS_BUILD_DIR ; fi
+- if [ "$TRAVIS_OS_NAME" == "osx" ] && [ "$TARGET" == "desktop-vulkan" ] && [ ! -e "$HOME/swiftshader/lib/libvk_swiftshader.dylib" ]; then cd $HOME ; wget https://ci.magnum.graphics/swiftshader-r5464.a6940c8e6e-macos-10.15.zip && mkdir -p swiftshader && cd swiftshader && unzip ../swiftshader-r5464.a6940c8e6e-macos-10.15.zip && cd $TRAVIS_BUILD_DIR ; fi
 
 script:
 - if [ "$TRAVIS_OS_NAME" == "linux" ] && ( [ "$TARGET" == "desktop" ] || [ "$TARGET" == "desktop-sanitizers" ] ); then ./package/ci/travis-desktop.sh; fi
 # Vulkan needs to be in a separate build, because it needs new CMake (for the
 # Find module) and in the future also C++14. Unfortunately that means we can't
 # apply the sanitizer or non-deprecated build on it.
-- if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$TARGET" == "desktop-vulkan" ]; then ./package/ci/travis-desktop-vulkan.sh; fi
+- if [ "$TARGET" == "desktop-vulkan" ]; then ./package/ci/travis-desktop-vulkan.sh; fi
 - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$TARGET" == "desktop-gles" ]; then ./package/ci/travis-desktop-gles.sh; fi
 - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$TARGET" == "android" ]; then ./package/ci/travis-android-arm.sh; fi
 - if [ "$TRAVIS_OS_NAME" == "osx" ] && [ "$TARGET" == "desktop" ]; then ./package/ci/travis-desktop.sh; fi
