@@ -24,12 +24,6 @@
 #   DEALINGS IN THE SOFTWARE.
 #
 
-# CMake has FindVulkan since 3.7
-cmake_minimum_required(VERSION 3.7)
-
-# We don't need system-wide includes. Not passing src/MagnumExternal/Vulkan
-# there because we don't want to be able to do #include <flextVk.h>.
-set(Vulkan_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src)
 find_package(Vulkan REQUIRED)
 
 set(MagnumVk_SRCS
