@@ -26,6 +26,7 @@ cmake .. \
     -DCMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS" \
     -DCMAKE_INSTALL_PREFIX=$HOME/deps \
     -DCMAKE_BUILD_TYPE=Debug \
+    -DVulkan_LIBRARY=$HOME/swiftshader/lib/libvk_swiftshader.dylib \
     -DWITH_AUDIO=OFF \
     -DWITH_DEBUGTOOLS=OFF \
     -DWITH_GL=OFF \
