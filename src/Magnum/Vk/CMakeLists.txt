@@ -60,6 +60,7 @@ set(MagnumVk_HEADERS
     Instance.h
     Integration.h
     LayerProperties.h
+    Queue.h
     Result.h
     TypeTraits.h
     Version.h
