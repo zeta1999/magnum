@@ -678,11 +678,23 @@ enum class MaterialAttribute: UnsignedInt {
     /**
      * Occlusion texture index,
      * @ref MaterialAttributeType::UnsignedInt.
+     *
+     * If @ref MaterialAttribute::OcclusionTextureStrength is present as well,
+     * these two are multiplied together.
      * @see @ref PbrMetallicRoughnessMaterialData::hasOcclusionRoughnessMetallicTexture(),
      *      @ref PbrMetallicRoughnessMaterialData::occlusionTexture(),
      *      @ref PbrSpecularGlossinessMaterialData::occlusionTexture()
      */
     OcclusionTexture,
+
+    /**
+     * Occlusion texture strength, @ref MaterialAttributeType::Float.
+     *
+     * Scales the texture defined by @ref MaterialAttribute::OcclusionTexture.
+     * @see @ref PbrMetallicRoughnessMaterialData::occlusionTextureStrength(),
+     *      @ref PbrSpecularGlossinessMaterialData::occlusionTextureStrength()
+     */
+    OcclusionTextureStrength,
 
     /**
      * Occlusion texture swizzle, @ref MaterialAttributeType::TextureSwizzle.
